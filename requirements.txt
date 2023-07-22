@@ -6,3 +6,4 @@ python-dotenv
 ipykernel
 langchain
 streamlit
+pysqlite3-binary
