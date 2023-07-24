@@ -26,6 +26,13 @@ DATABASES = {
     }
 }
 
+def load_conversation(filename):
+
+    with open(filename, 'r') as f:
+        conversation = f.read()
+
+    return conversation
+
 def ask_gpt(prompt):
     llm = OpenAI()
     return llm.predict(prompt)

@@ -7,3 +7,5 @@ ipykernel
 langchain
 streamlit
 pysqlite3-binary
+kor
+pandas
