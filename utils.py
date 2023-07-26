@@ -34,15 +34,21 @@ def generate_dataframe(json_data):
                 restaurant.get('first_name', ''),
                 restaurant.get('last_name', ''),
                 restaurant.get('job_title', ''),
-                restaurant.get('company_name', ''),
-                restaurant.get('phone_number', ''),
+                restaurant.get('mobile_number', ''),
+                restaurant.get('desk_number', ''),
                 restaurant.get('email', ''),
+                restaurant.get('company_name', ''),
+                restaurant.get('business_url', ''),  
                 restaurant.get('address', ''),
 
             ])
 
     # Convert the list into a DataFrame
-    df = pd.DataFrame(data, columns=['first_name', 'last_name', 'job_title', 'company_name', 'phone_number', 'email', 'address'])
+    df = pd.DataFrame(data, columns=[
+        'first_name', 'last_name', 'job_title', 
+        'mobile_number', 'desk_number', 'email', 
+        'company_name', 'business_url', 'address',
+        ])
 
     return df
 

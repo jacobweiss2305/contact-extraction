@@ -48,10 +48,20 @@ def main():
                             examples=[("John Smith is a sales associate at a walmart", "walmart")],
                         ),
                         Text(
-                            id="phone_number",
-                            description="The phone number of the person",
-                            examples=[("John Smith is a sales associate and his phone number is 719-239-0231", "719-239-0231")],
+                            id="mobile_number",
+                            description="The mobile or direct number of the person",
+                            examples=[("John Smith is a sales associate and mobile: 719-239-0231", "719-239-0231")],
                         ),
+                        Text(
+                            id="desk_number",
+                            description="The desk number of the person",
+                            examples=[("John Smith is a sales associate and desk phone number: 719-239-0231", "719-239-0231")],
+                        ),
+                        Text(
+                            id="business_website",
+                            description="The business website of the company that the person works for",
+                            examples=[("John Smith is a sales associate at Data Axle (data-axle.com) and his desk phone number is 719-239-0231", "data-axle.com")],
+                        ),                                                                       
                         Text(
                             id="email",
                             description="The email of the person",
@@ -66,44 +76,93 @@ def main():
                     examples=[
                         (
                             """
-                            John Smith
-                            Senior Sales & Marketing Director
-                            
-                            719-239-0231
-                            john.smith@email.com
+                            Email Chain between Alice and Bob:
 
-                            Data Axle
-                            123 Main St, New York, NY 10001
-                            
-                            Jane Doe
-                            Sales Executive
-                            
-                            719-239-9999
-                            jane.doe@email.com
+                            -------------------------------------------------------
 
-                            KPMG
-                            123 Main St, San Franciso, CA 90909
+                            **Email 1 - From Alice to Bob**
+
+                            Subject: Planning the Project
+
+                            Hi Bob,
+
+                            I hope this email finds you well. I wanted to discuss the upcoming project with you. Are you available for a quick call tomorrow at 10 AM? Let me know your thoughts.
+
+                            Looking forward to working together!
+
+                            Best regards,
+                            Alice Johnson
+                            Project Manager
+                            ABC Corporation
+                            Email: alice.johnson@abc-corp.com
+                            Mobile: (555) 111-1111
+                            Desk: (555) 123-4567
+
+                            -------------------------------------------------------
+
+                            **Email 2 - From Bob to Alice**
+
+                            Subject: Re: Planning the Project
+
+                            Hi Alice,
+
+                            Thanks for reaching out! A call tomorrow at 10 AM sounds good to me. Let's connect and discuss the project in detail.
+
+                            Best regards,
+                            Bob Smith
+                            Lead Developer
+                            XYZ Solutions
+                            Email: bob.smith@xyz-solutions.com
+                            Mobile: (555) 222-2222
+                            Desk: (555) 987-6543
+
+                            -------------------------------------------------------
+
+                            **Email 3 - From Alice to Bob**
+
+                            Subject: Re: Planning the Project
+
+                            Hi Bob,
+
+                            Great! I've scheduled the call for tomorrow at 10 AM. We'll cover the project scope, timelines, and resource allocation.
+
+                            Looking forward to a productive discussion.
+
+                            Best regards,
+                            Alice Johnson
+                            Project Manager
+                            ABC Corporation
+                            Email: alice.johnson@abc-corp.com
+                            Mobile: (555) 111-1111
+                            Desk: (555) 123-4567
+
+                            -------------------------------------------------------
+
                             """,
-                            [
-                                {
-                                    "first_name": "John", 
-                                    "last_name": "Smith", 
-                                    "job_title": "Senior Sales & Marketing Director",
-                                    "company_name": "Data Axle",
-                                    "phone_number": "719-239-0231",
-                                    "email": "john.smith@email.com",
-                                    "address": "123 Main St, New York, NY 10001"
-                                },
-                                {
-                                    "first_name": "Jane", 
-                                    "last_name": "Doe", 
-                                    "job_title": "Sales Executive",
-                                    "company_name": "KPMG",
-                                    "phone_number": "719-239-9999",
-                                    "email": "jane.doe@email.com",
-                                    "address": "123 Main St, San Franciso, CA 90909"                    
-                                },
-                            ],
+                        [
+                            {
+                                "first_name": "Alice",
+                                "last_name": "Johnson",
+                                "job_title": "Project Manager",
+                                "company_name": "ABC Corporation",
+                                "mobile_number": "(555) 111-1111",
+                                "desk_number": "(555) 123-4567",
+                                "business_website": "abc-corp.com",
+                                "email": "alice.johnson@abc-corp.com",
+                                "address": "123 Main St, New York, NY 10001"
+                            },
+                            {
+                                "first_name": "Bob",
+                                "last_name": "Smith",
+                                "job_title": "Lead Developer",
+                                "company_name": "XYZ Solutions",
+                                "mobile_number": "(555) 222-2222",
+                                "desk_number": "(555) 987-6543",
+                                "business_website": "xyz-solutions.com",
+                                "email": "bob.smith@xyz-solutions.com",
+                                "address": "456 Elm St, San Francisco, CA 90909"
+                            }
+                        ],
                         )
                     ],
                     many=True,
@@ -130,11 +189,15 @@ def main():
                     utils.extract_contacts_from_documents(chain, split_docs)
                 )
 
+                st.write("Extraction Results:")
+
+                st.write(document_extraction_results)
+
                 df = utils.generate_dataframe(document_extraction_results)
 
                 st.write("Extracted Contacts:")
 
-                st.write(df)
+                st.write(df.drop_duplicates().dropna(how="all"))
             else:
                 st.warning("Please enter a conversation text.")
 
