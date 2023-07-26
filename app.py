@@ -191,8 +191,6 @@ def main():
 
                 st.write("Extraction Results:")
 
-                st.write(document_extraction_results)
-
                 df = utils.generate_dataframe(document_extraction_results)
 
                 st.write("Extracted Contacts:")
