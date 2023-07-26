@@ -1,30 +1,19 @@
-from dotenv import load_dotenv
-
-load_dotenv()
-
-import os
-
-from langchain.chains import RetrievalQA
-from langchain.document_loaders import TextLoader
-from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.llms import OpenAI
-from langchain.text_splitter import CharacterTextSplitter
-from langchain.vectorstores import Chroma
-from langchain.llms import OpenAI
-
 import pandas as pd
 
-__import__('pysqlite3')
-import sys
-import os
-sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+from langchain.callbacks import get_openai_callback
+from kor import extract_from_documents
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join('/workspaces/contact-extraction', 'db.sqlite3'),
-    }
-}
+# __import__('pysqlite3')
+# import sys
+# import os
+# sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': os.path.join('/workspaces/contact-extraction', 'db.sqlite3'),
+#     }
+# }
 
 def load_conversation(filename):
 
@@ -33,21 +22,32 @@ def load_conversation(filename):
 
     return conversation
 
-def ask_gpt(prompt):
-    llm = OpenAI()
-    return llm.predict(prompt)
+def generate_dataframe(json_data):
+    # Prepare an empty list to store all restaurant data
+    data = []
 
-def qa(file_path, prompt):
+    for record in json_data:
+        restaurant_list = record.get('data', {}).get('personal_info', [])
+        for restaurant in restaurant_list:
+            # Get details for each restaurant and append it to data
+            data.append([
+                restaurant.get('first_name', ''),
+                restaurant.get('last_name', ''),
+                restaurant.get('job_title', ''),
+                restaurant.get('company_name', ''),
+                restaurant.get('phone_number', ''),
+                restaurant.get('email', ''),
+                restaurant.get('address', ''),
 
-    loader = TextLoader(file_path)
+            ])
 
-    documents = loader.load()
-    text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=50)
-    texts = text_splitter.split_documents(documents)
+    # Convert the list into a DataFrame
+    df = pd.DataFrame(data, columns=['first_name', 'last_name', 'job_title', 'company_name', 'phone_number', 'email', 'address'])
 
-    embeddings = OpenAIEmbeddings()
-    docsearch = Chroma.from_documents(texts, embeddings)
+    return df
 
-    qa = RetrievalQA.from_chain_type(llm=OpenAI(), chain_type="stuff", retriever=docsearch.as_retriever())
-
-    return qa.run(prompt)
+async def extract_contacts_from_documents(chain, split_docs):
+    with get_openai_callback() as cb:
+        return await extract_from_documents(
+            chain, split_docs, max_concurrency=5, use_uid=False, return_exceptions=True
+        )

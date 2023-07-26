@@ -6,6 +6,6 @@ python-dotenv
 ipykernel
 langchain
 streamlit
-pysqlite3-binary
+# pysqlite3-binary
 kor
 pandas
