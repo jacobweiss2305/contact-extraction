@@ -17,7 +17,7 @@ from kor import extract_from_documents
 
 def load_conversation(filename):
 
-    with open(filename, 'r') as f:
+    with open(filename, 'r', encoding='utf-8') as f:
         conversation = f.read()
 
     return conversation
@@ -53,6 +53,7 @@ def generate_dataframe(json_data):
     return df
 
 async def extract_contacts_from_documents(chain, split_docs):
+
     with get_openai_callback() as cb:
         return await extract_from_documents(
             chain, split_docs, max_concurrency=5, use_uid=False, return_exceptions=True
