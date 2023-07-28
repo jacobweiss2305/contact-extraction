@@ -65,15 +65,137 @@ def process_email(chain, email):
     output = chain.run(email)
     return pd.DataFrame(output.dict()['personal_info'])
 
+st.markdown("""
+<style>
+    .find-contacts-button {
+        display: flex;
+        padding: 0.375rem 1rem;
+        flex-direction: column;
+        justify-content: center;
+        align-items: flex-start;
+        border-radius: 0.25rem;
+        background: #0050C3;
+        color: #fff; /* Text color for the button (white) */
+        text-align: center; /* Center the text in the button */
+        font-size: 16px; /* Font size for the button text */
+        font-weight: bold; /* Bold font weight for the button text */
+        /* Add the specified box shadow */
+        box-shadow: 0px 3px 1px -2px rgba(0, 0, 0, 0.20), 0px 2px 2px 0px rgba(0, 0, 0, 0.14), 0px 1px 5px 0px rgba(0, 0, 0, 0.12);
+    }
+
+    /* Contact cards styling */
+    .contact-card-container {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        box-sizing: border-box;
+        padding: 20px;
+        font-family: 'Arial', sans-serif;
+        max-width: 800px; /* Limit container width for better readability */
+        margin: 0 auto; /* Center the container */
+    }
+
+    .contact-card {
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        padding: 10px;
+        margin-bottom: 20px; /* Add space between rows */
+        font-size: 14px;
+        line-height: 1.6;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .contact-card h2 {
+        font-size: 20px;
+        font-style: normal;
+        font-weight: 500;
+        line-height: 160%;
+        letter-spacing: 0.15px;
+        color: #000;
+        font-feature-settings: 'clig' off, 'liga' off;
+    }
+
+    .contact-card p.job-title {
+        font-size: 14px;
+        font-style: normal;
+        font-weight: 400;
+        line-height: 143%;
+        letter-spacing: 0.17px;
+        color: #4B4B4B;
+        font-feature-settings: 'clig' off, 'liga' off;
+    }
+
+    .contact-card p.email-phone {
+        font-size: 14px;
+        font-style: normal;
+        font-weight: 400;
+        line-height: 150%;
+        letter-spacing: 0.15px;
+        color: #000;
+        font-feature-settings: 'clig' off, 'liga' off;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<style>
+    /* Header styling */
+    .header {
+        display: flex;
+        align-items: center;
+        gap: 0.1875rem;
+        align-self: stretch;
+        background: #3C3C3C;
+        /* Add the specified box shadow */
+        box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.12), 0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 2px 1px -1px rgba(0, 0, 0, 0.20);
+    }
+    /* Logo styling */
+    .header-logo {
+        width: 50px; /* Adjust the width of the logo */
+        height: 50px; /* Adjust the height of the logo */
+    }
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<style>
+    /* Text Box styling */
+    .text-box {
+        display: flex;
+        width: 87.875rem;
+        height: 16.5rem;
+        justify-content: center;
+        align-items: center;
+        border-radius: 0.5rem;
+        background: #FFF;
+        /* Add any additional styles you want for the text box */
+        /* For example, you can add padding or a box shadow */
+        padding: 1rem;
+        box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+    }
+</style>
+""", unsafe_allow_html=True)
+
+logo_svg = open("ContactEase icon.svg", "r").read()
+
 def main():
-    st.title("Contact Finder")
+    st.markdown("""
+    <div class="header">
+        <!-- SVG logo -->
+        <div class="header-logo">
+            {}
+        </div>
+        <!-- Add any other elements you want in the header, such as a title or description -->
+        <h1 style="color: #fff;">Contact Finder</h1>
+    </div>
+    """.format(logo_svg), unsafe_allow_html=True)
+
     st.markdown("")
-    st.markdown("### Paste your message below")
 
     with st.container():
-        conversation_input = st.text_area("", "", height=500)
+        conversation_input = st.text_area("Paste your message below", "", height=500)
 
-    cols = st.columns([1, 1, 1, 1, 1, 1, 1, 1, 1, 1]) # Split the window into three columns of equal width
+    cols = st.columns([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]) # Split the window into three columns of equal width
     
     # Add clear button in the first column
     if cols[0].button("Clear"):
@@ -83,7 +205,7 @@ def main():
     cols[1].write("")
 
     # Add the extraction button to the third column
-    if cols[9].button("Find Contacts"):
+    if cols[11].button("Find Contacts"):
             if conversation_input:
 
                 prompt_msgs = [
@@ -118,10 +240,17 @@ def main():
                         
                         main.append(df)
                 
-                st.markdown("")                        
+                # Custom CSS to reduce the margin between "Found Contacts" heading and the contact cards
+                st.markdown("""
+                <style>
+                    /* Reduce the margin between Found Contacts heading and the contact cards */
+                    .found-contacts-heading {
+                        margin-bottom: 0.5rem;
+                    }
+                </style>
+                """, unsafe_allow_html=True)
 
-                st.markdown("### Found Contacts")
-
+                st.markdown("""<p class="found-contacts-heading" style='color: #404040; font-family: Roboto; font-size: 1.25rem; font-style: normal; font-weight: 400; line-height: normal;'>Found Contacts</p>""", unsafe_allow_html=True)
                 output = to_lowercase(pd.concat(main, ignore_index=True).drop_duplicates().replace('', None))
                 
                 deduplicated_df = get_unique_contacts_with_most_info(output)
@@ -181,13 +310,12 @@ def main():
 
                         st.markdown(f"""
                             <div class="contact-card">
-                                <h2>{first_name} {last_name}</h2>
-                                <p><small style="color: grey;">{job_title}</small></p>
-                                <p><strong>Email:</strong> {email}</p>
-                                <p><strong>Phone:</strong> {mobile_number}</p>
+                                <h2><strong>{first_name} {last_name}</strong></h2>
+                                <p class="job-title"><small style="color: grey;">{job_title}</small></p>
+                                <p class="email-phone">{email}</p>
+                                <p class="email-phone">{mobile_number}</p>
                             </div>
                         """, unsafe_allow_html=True)
-
 
                         index += 1
 
