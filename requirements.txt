@@ -1,11 +1,5 @@
 openai
-tiktoken
-chromadb
-pandas
-python-dotenv
-ipykernel
 langchain
 streamlit
-# pysqlite3-binary
-kor
 pandas
+python-dotenv

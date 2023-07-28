@@ -134,7 +134,6 @@ def main():
 
                 contacts = deduplicated_df.to_dict('records')
            
-
                 # The style and start of the contact card container
                 st.markdown("""
                 <style>
@@ -145,19 +144,28 @@ def main():
                         box-sizing: border-box;
                         padding: 20px;
                         font-family: 'Arial', sans-serif;
+                        max-width: 800px; /* Limit container width for better readability */
+                        margin: 0 auto; /* Center the container */
                     }
                     .contact-card {
-                        border: 2px solid #ccc;
+                        border: 1px solid #ddd;
                         border-radius: 5px;
-                        padding: 20px;
-                        font-size: 0.85em;
+                        padding: 10px;
+                        margin-bottom: 20px; /* Add space between rows */
+                        font-size: 14px;
                         line-height: 1.6;
+                        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+                    }
+                    .contact-card h2 {
+                        font-size: 18px;
+                        margin-bottom: 5px;
+                    }
+                    .contact-card p {
+                        margin: 0;
                     }
                 </style>
-
                 <div class="contact-card-container">
                 """, unsafe_allow_html=True)
-
                 index = 0
                 cols = st.columns(3)
 
@@ -166,15 +174,13 @@ def main():
                         first_name = contact['first_name'].capitalize()
                         last_name = contact['last_name'].capitalize()
                         job_title = contact['job_title'] if pd.notnull(contact['job_title']) else "N/A"
+                        if job_title != "N/A":
+                            job_title = job_title.capitalize()
                         email = contact['email'] if pd.notnull(contact['email']) else "N/A"
                         mobile_number = contact['mobile_number'] if pd.notnull(contact['mobile_number']) else "N/A"
 
-                        image_url = utils.get_image(f"{first_name} {last_name}")
-
-
                         st.markdown(f"""
                             <div class="contact-card">
-                                <img src="{image_url}" alt="Profile Picture" width="100">
                                 <h2>{first_name} {last_name}</h2>
                                 <p><small style="color: grey;">{job_title}</small></p>
                                 <p><strong>Email:</strong> {email}</p>
