@@ -175,7 +175,7 @@ def main():
                         last_name = contact['last_name'].capitalize()
                         job_title = contact['job_title'] if pd.notnull(contact['job_title']) else "N/A"
                         if job_title != "N/A":
-                            job_title = job_title.capitalize()
+                            job_title = job_title.title()
                         email = contact['email'] if pd.notnull(contact['email']) else "N/A"
                         mobile_number = contact['mobile_number'] if pd.notnull(contact['mobile_number']) else "N/A"
 
