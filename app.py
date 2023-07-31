@@ -21,22 +21,35 @@ from pydantic import BaseModel
 import utils
 import concurrent.futures
 
+from typing import List, Optional
+
+from langchain.callbacks import get_openai_callback
+from langchain.chat_models import ChatOpenAI
+
+import pandas as pd
+from pydantic import BaseModel, Field, validator
+
+from langchain.schema import Document
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+
+import re
+
+llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+
+
 st.set_page_config(layout="wide")
 
-class ContactInfo(BaseModel):
-    first_name: str
-    last_name: str
-    job_title: str
-    company_name: str
-    mobile_number: str
-    office_number: str
-    business_website: str
-    email: str
-    address: str
-
-class PersonalInfo(BaseModel):
-    personal_info: List[ContactInfo]
-
+class ContactInfo:
+    def __init__(self, first_name, last_name, job_title, company_name, mobile_number, office_number, business_website, email, address):
+        self.first_name = first_name
+        self.last_name = last_name
+        self.job_title = job_title
+        self.company_name = company_name
+        self.mobile_number = mobile_number
+        self.office_number = office_number
+        self.business_website = business_website
+        self.email = email
+        self.address = address
 
 llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
 
@@ -47,7 +60,7 @@ def get_unique_contacts_with_most_info(df):
     # Add a column that counts the number of non-null fields for each contact
     df['info_count'] = df.notnull().sum(axis=1)
     # Group by 'first_name', 'last_name', 'email', and get the row with max 'info_count' for each group
-    df = df.loc[df.groupby(['first_name', 'last_name', 'email'])['info_count'].idxmax()]
+    df = df.loc[df.groupby(['first_name', 'last_name', ])['info_count'].idxmax()]
     # Drop 'info_count' as it's no longer needed
     df = df.drop(columns='info_count')
     return df
@@ -64,6 +77,99 @@ def split_text_by_from(text):
 def process_email(chain, email):
     output = chain.run(email)
     return pd.DataFrame(output.dict()['personal_info'])
+
+def create_prompt(email):
+    prompt = f"""
+
+        System: As a world-class algorithm for extracting information in structured formats, your task is to extract the contact details from the given email's signature and cc section. The email is provided below:
+
+        Human:
+        {email}
+
+        Human:
+        Extract the contact information from the email signature and cc section.
+
+        The information should be accurately extracted and arranged in a way that follows the correct format:
+
+        Person 1
+        First Name: 
+        Last Name:
+        Job Title:
+        Email:
+        Mobile Phone Number: 
+        Office Phone Number: 
+        Company Name: 
+        Company Website:
+        Company Address:
+
+        Person 2
+        First Name: 
+        Last Name:
+        Job Title:
+        Email:
+        Mobile Phone Number: 
+        Office Phone Number: 
+        Company Name: 
+        Company Website:
+        Company Address:
+
+        Person N
+        First Name: 
+        Last Name:
+        Job Title:
+        Email:
+        Mobile Phone Number: 
+        Office Phone Number: 
+        Company Name: 
+        Company Website:
+        Company Address:
+
+        """
+    return prompt
+
+def parse_contact_info(input_list):
+    personal_info_list = []
+    entry_pattern = re.compile(
+        r'\s*First Name:\s*(?P<first_name>[^\n]*)\s*'
+        r'Last Name:\s*(?P<last_name>[^\n]*)\s*'
+        r'Job Title:\s*(?P<job_title>[^\n]*)\s*'
+        r'Email:\s*(?P<email>[^\n]*)\s*'
+        r'Mobile Phone Number:\s*(?P<mobile_number>[^\n]*)\s*'
+        r'Office Phone Number:\s*(?P<office_number>[^\n]*)\s*'
+        r'Company Name:\s*(?P<company_name>[^\n]*)\s*'
+        r'Company Website:\s*(?P<business_website>[^\n]*)\s*'
+        r'Company Address:\s*(?P<address>[^\n]*)'
+    )
+
+    for entry in input_list:
+        # strip leading/trailing whitespaces from the entry string
+        entry = entry.strip()
+        match = entry_pattern.search(entry)
+        if match:
+            contact_info = ContactInfo(
+                first_name=match.group('first_name'),
+                last_name=match.group('last_name'),
+                job_title=match.group('job_title'),
+                company_name=match.group('company_name'),
+                mobile_number=match.group('mobile_number'),
+                office_number=match.group('office_number'),
+                business_website=match.group('business_website'),
+                email=match.group('email'),
+                address=match.group('address'),
+            )
+            personal_info_list.append(contact_info)
+
+    return personal_info_list
+
+import concurrent.futures
+
+def process_email(email):
+    prompt = create_prompt(email)
+    output = llm.predict(prompt)
+    input_list = output.split('Person')
+    result = parse_contact_info(input_list)
+    found_contacts = pd.DataFrame([i.__dict__ for i in result])
+    return found_contacts
 
 st.markdown("""
 <style>
@@ -208,38 +314,22 @@ def main():
     if cols[11].button("Find Contacts"):
             if conversation_input:
 
-                prompt_msgs = [
-                    SystemMessage(
-                        content="You are a world class algorithm for extracting information in structured formats."
-                    ),
-                    HumanMessage(
-                        content="Use the given format to extract contact details from the following email (include contacts in Cc:):"
-                    ),
-                    HumanMessagePromptTemplate.from_template("{input}"),
-                    HumanMessage(content="Make sure to answer in the correct format"),
-                ]
-                prompt = ChatPromptTemplate(messages=prompt_msgs)
-
-                chain = create_structured_output_chain(PersonalInfo, llm, prompt, verbose=True)
-
-                split_emails = split_text_by_from(conversation_input)
+                emails = ['From:' + i for i in conversation_input.split('From:') if len(i) > 10]
 
                 main = []
-                # Use ThreadPoolExecutor to parallelize the processing of emails
                 with concurrent.futures.ThreadPoolExecutor() as executor:
-                    # Submit each email processing task to the ThreadPoolExecutor
-                    future_to_email = {executor.submit(process_email, chain, email): email for email in split_emails}
-
-                    # Wait for all tasks to complete and get the results
-                    for future in concurrent.futures.as_completed(future_to_email):
+                    future_to_email = {executor.submit(process_email, email): email for email in emails}
+                    from tqdm import tqdm
+                    for future in tqdm(concurrent.futures.as_completed(future_to_email)):
                         email = future_to_email[future]
                         try:
-                            df = future.result()
+                            data = future.result()
                         except Exception as exc:
-                            df = pd.DataFrame()
-                        
-                        main.append(df)
-                
+                            print('%r generated an exception: %s' % (email, exc))
+                        else:
+                            print('%r extracted successfully' % (email))
+                            main.append(data)
+
                 # Custom CSS to reduce the margin between "Found Contacts" heading and the contact cards
                 st.markdown("""
                 <style>
@@ -251,18 +341,17 @@ def main():
                 """, unsafe_allow_html=True)
 
                 st.markdown("""<p class="found-contacts-heading" style='color: #404040; font-family: Roboto; font-size: 1.25rem; font-style: normal; font-weight: 400; line-height: normal;'>Found Contacts</p>""", unsafe_allow_html=True)
-                output = to_lowercase(pd.concat(main, ignore_index=True).drop_duplicates().replace('', None))
+                
+                output = to_lowercase(pd.concat(main, ignore_index=True).replace('N/A', None).replace('n/a', None).replace('', None).drop_duplicates())
                 
                 deduplicated_df = get_unique_contacts_with_most_info(output)
 
-                contacts = deduplicated_df.to_dict('records')
+                # Calculate the number of NaNs in each row
+                nan_counts = deduplicated_df.isna().sum(axis=1)
 
-                output = to_lowercase(pd.concat(main, ignore_index=True).drop_duplicates().replace('', None))
+                # Sort the DataFrame based on the least amount of NaNs
+                contacts = deduplicated_df.iloc[nan_counts.argsort()].to_dict('records')
 
-                deduplicated_df = get_unique_contacts_with_most_info(output)
-
-                contacts = deduplicated_df.to_dict('records')
-           
                 # The style and start of the contact card container
                 st.markdown("""
                 <style>
@@ -284,7 +373,7 @@ def main():
                         font-size: 14px;
                         line-height: 1.6;
                         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-                        min-height: 170px; /* Set the minimum height */
+                        min-height: 280px; /* Set the minimum height */
                     }
                     .contact-card h2 {
                         font-size: 18px;
@@ -299,25 +388,46 @@ def main():
 
                 index = 0
                 cols = st.columns(3)
-
+ 
                 for contact in contacts:
                     with cols[index % 3]:
                         first_name = contact['first_name'].capitalize()
+
                         last_name = contact['last_name'].capitalize()
+
                         job_title = contact['job_title'] if pd.notnull(contact['job_title']) else ""
+
                         if job_title != "":
-                            job_title = job_title.title()
+                            job_title = job_title.title()                        
+
+                        company_name = contact['company_name'] if pd.notnull(contact['company_name']) else ""
+
+                        if company_name != "":
+                            company_name = company_name.title()
+
                         email = contact['email'] if pd.notnull(contact['email']) else ""
+
                         mobile_number = contact['mobile_number'] if pd.notnull(contact['mobile_number']) else ""
+
                         office_number = contact['office_number'] if pd.notnull(contact['office_number']) else ""
+
+                        business_website = contact['business_website'] if pd.notnull(contact['business_website']) else ""
+
+                        address = contact['address'] if pd.notnull(contact['address']) else ""
+
+                        if address != "":
+                            address = address.title()
 
                         st.markdown(f"""
                             <div class="contact-card">
                                 <h2><strong>{first_name} {last_name}</strong></h2>
                                 <p class="job-title"><small style="color: grey;">{job_title}</small></p>
-                                <p class="email-phone">{email}</p>
-                                <p class="email-phone">{mobile_number}</p>
-                                <p class="email-phone">{office_number}</p>
+                                <p class="company-name">{company_name}</p>
+                                <p class="email">{email}</p>
+                                <p class="mobile-number">{mobile_number}</p>
+                                <p class="office-number">{office_number}</p>
+                                <p class="business-website">{business_website}</p>
+                                <p class="address">{address}</p>
                             </div>
                         """, unsafe_allow_html=True)
 
