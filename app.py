@@ -29,7 +29,7 @@ class ContactInfo(BaseModel):
     job_title: str
     company_name: str
     mobile_number: str
-    desk_number: str
+    office_number: str
     business_website: str
     email: str
     address: str
@@ -284,6 +284,7 @@ def main():
                         font-size: 14px;
                         line-height: 1.6;
                         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+                        min-height: 170px; /* Set the minimum height */
                     }
                     .contact-card h2 {
                         font-size: 18px;
@@ -295,6 +296,7 @@ def main():
                 </style>
                 <div class="contact-card-container">
                 """, unsafe_allow_html=True)
+
                 index = 0
                 cols = st.columns(3)
 
@@ -302,11 +304,12 @@ def main():
                     with cols[index % 3]:
                         first_name = contact['first_name'].capitalize()
                         last_name = contact['last_name'].capitalize()
-                        job_title = contact['job_title'] if pd.notnull(contact['job_title']) else "N/A"
-                        if job_title != "N/A":
+                        job_title = contact['job_title'] if pd.notnull(contact['job_title']) else ""
+                        if job_title != "":
                             job_title = job_title.title()
-                        email = contact['email'] if pd.notnull(contact['email']) else "N/A"
-                        mobile_number = contact['mobile_number'] if pd.notnull(contact['mobile_number']) else "N/A"
+                        email = contact['email'] if pd.notnull(contact['email']) else ""
+                        mobile_number = contact['mobile_number'] if pd.notnull(contact['mobile_number']) else ""
+                        office_number = contact['office_number'] if pd.notnull(contact['office_number']) else ""
 
                         st.markdown(f"""
                             <div class="contact-card">
@@ -314,6 +317,7 @@ def main():
                                 <p class="job-title"><small style="color: grey;">{job_title}</small></p>
                                 <p class="email-phone">{email}</p>
                                 <p class="email-phone">{mobile_number}</p>
+                                <p class="email-phone">{office_number}</p>
                             </div>
                         """, unsafe_allow_html=True)
 
