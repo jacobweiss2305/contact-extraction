@@ -10,8 +10,8 @@ COPY . /app
 
 RUN pip install -r requirements.txt
 
-# Expose port 8501 (Streamlit's default port)
-EXPOSE 8501
+# Expose port 8502 (Streamlit's default port)
+EXPOSE 8502
 
 # Start the Streamlit app when the container runs
-CMD ["streamlit", "run", "app.py", "--server.port", "8501", "--server.headless", "true", "--server.enableCORS", "false"]
+CMD ["streamlit", "run", "app.py", "--server.port", "8502", "--server.headless", "true", "--server.enableCORS", "false"]
