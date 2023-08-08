@@ -34,8 +34,15 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 import re
 
+from langchain.llms import Replicate
+from langchain import PromptTemplate, LLMChain
+
 llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
 
+llm = Replicate(
+    model="replicate/llama-2-70b-chat:2c1608e18606fad2812020dc541930f2d0495ce32eee50074220b87300bc16e1",
+    # input={"temperature": 0.75, "max_length": 500, "top_p": 1},
+)
 
 st.set_page_config(layout="wide")
 
@@ -51,7 +58,7 @@ class ContactInfo:
         self.email = email
         self.address = address
 
-llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+# llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
 
 def to_lowercase(df):
     return df.applymap(lambda s: s.lower() if type(s) == str else s)
